@@ -94,17 +94,20 @@ raw_data_3 <- raw_data_2 %>%
   mutate(born=str_extract(birth_date,"[0-9]{2,4}$")) %>% 
   mutate(value=make_yeardate(value)) %>% 
   separate(value,into=c("value","death_date","value_2"),sep="ddd") %>% 
+  mutate(value=trimws(str_remove(value,"^[;\\*,\\.]"))) %>% 
   mutate(died=str_extract(death_date,"[0-9]{2,4}$")) %>% 
   {.}
 
 
 
 
-raw_data_3 <- raw_data_2 %>%   
- separate(value,
-          into=c("last_name","first_name","birth_date","faith","outcome"),
-          sep = ",",
+raw_data_4 <- raw_data_3 %>%   
+ separate(name,
+          into=c("last_name","first_name"),
+          sep = ", {0,2}",
           extra = "merge") %>%
+  mutate(first_name=str_remove(first_name,", $")) %>% 
+  separate(value,into=c("faith","fate"),extra = "merge") %>% 
   {.}
 
   
