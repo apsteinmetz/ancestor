@@ -117,6 +117,7 @@ raw_data_4 <- raw_data_3 %>%
           sep = ", {0,2}",
           extra = "merge") %>%
   mutate(first_name=str_remove(first_name,", $")) %>% 
+  separate(last_name, into=c("last_name","maiden_name"), sep = " nee ") %>% 
   separate(value,into=c("faith","fate"),extra = "merge") %>% 
   {.}
 
@@ -126,7 +127,22 @@ raw_data_5 <- raw_data_4 %>%
   mutate(last_location = ifelse(!is.na(faith) & (is.na(last_location) | last_location ==""),fate,last_location)) %>%
   separate(last_location,into = c("last_location","last_district"),sep = " Krs ",extra = "merge") %>%
   mutate(last_location=ifelse(str_detect(last_location,"Lager"),str_extract(last_location,"Lager [a-zA-Z]+"),last_location)) %>%
-  mutate(faith = ifelse(faith == "e|ev"),"Evangelical",faith) %>% 
+  mutate(faith = ifelse(faith == "e$|ev$"),"Evangelical",faith) %>% 
   mutate(fate=ifelse(!(faith %in% faiths),faith,fate)) %>%
   select(-raw_text,everything())
   {.}
+
+# pull remaining fates out of last_location
+for (n in 1:length(fates)){
+  raw_data_5 <- raw_data_5 %>% 
+    mutate(fate=ifelse(str_detect(last_location,fates[n]),fates[n],fate)) %>% 
+    mutate(last_location=str_remove(last_location,fates[n]))
+  
+}
+
+prepositions <- c("^am ","^bei ","^nach ","^an ","^in ")
+raw_data_5$last_location <- trimws(raw_data_5$last_location)
+for (n in 1:length(prepositions)){
+  raw_data_5 <- raw_data_5 %>% 
+  mutate(last_location=str_remove(last_location,prepositions[n]))
+}
