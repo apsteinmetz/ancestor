@@ -48,7 +48,7 @@ raw_data <- read_lines("data/Schowe_Residents.txt",skip_empty_rows = TRUE) %>%
 raw_data_1 <- raw_data %>% 
   mutate(value = str_replace_all(value,"P {0,1}\\.","Platz")) %>% 
   mutate(value = str_replace_all(value,"Hof J {0,1}\\.","Hof J")) %>% 
-  mutate(value = str_replace_all(value,"geb {0,1}\\.","nee")) %>% 
+  mutate(value = str_replace_all(value,"(geb|verh) {0,1}\\.","nee")) %>% 
   mutate(value = str_replace_all(value,"ev {0,1}(\\.|,)","Evangelical")) %>% 
   # "ret." also appears in the religion field but I am not confident enough to assume it is a typo for "ref"
   mutate(value = str_replace_all(value,"ref {0,1}\\.","Reformed")) %>%
@@ -127,7 +127,7 @@ raw_data_5 <- raw_data_4 %>%
   mutate(last_location = ifelse(!is.na(faith) & (is.na(last_location) | last_location ==""),fate,last_location)) %>%
   separate(last_location,into = c("last_location","last_district"),sep = " Krs ",extra = "merge") %>%
   mutate(last_location=ifelse(str_detect(last_location,"Lager"),str_extract(last_location,"Lager [a-zA-Z]+"),last_location)) %>%
-  mutate(faith = ifelse(faith == "e$|ev$"),"Evangelical",faith) %>% 
+  mutate(faith = ifelse(faith == "e$|ev$","Evangelical",faith)) %>% 
   mutate(fate=ifelse(!(faith %in% faiths),faith,fate)) %>%
   select(-raw_text,everything())
   {.}
