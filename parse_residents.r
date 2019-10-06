@@ -55,13 +55,14 @@ raw_data_1 <- raw_data %>%
   mutate(value = str_replace_all(value,"ev {0,1}(\\.|,)","Evangelical")) %>% 
   mutate(value = str_replace_all(value,"ref {0,1}\\.","Reformed")) %>%
   # places
-  mutate(value = str_replace_all(value,"Krs {0,1}\\.","Krs")) %>%
+  mutate(value = str_replace_all(value,"Krs|Kr {0,1}\\.","Krs")) %>%
   mutate(value = str_replace_all(value,"Jug {0,1}\\.","Jugoslavia")) %>%
   mutate(value = str_replace_all(value,"†","died")) %>% 
   mutate(value = str_replace_all(value,", {0,2}sen\\."," Senior")) %>% 
   # fates
   # questions: is "gef." "geßtorben" or "gefallen" (which would be "killed in action")? I translate to "died."
   mutate(value = str_replace_all(value,"gef {0,1}\\.","died")) %>%
+  mutate(value = str_replace_all(value,"gefallen","died")) %>%
   mutate(value = str_replace_all(value,"vermißt","missing")) %>% 
   mutate(value = str_replace_all(value,"ermordet","murdered")) %>% 
   mutate(value = str_replace_all(value,"erhängte","hanged")) %>%  
@@ -108,10 +109,12 @@ raw_data_3 <- raw_data_2 %>%
   mutate(value=make_yeardate(value)) %>% 
   separate(value,into=c("name","birth_date","value"),sep="ddd") %>% 
   mutate(born=str_extract(birth_date,"[0-9]{2,4}$")) %>% 
+  mutate(born=as.numeric(ifelse(str_length(born)==2,paste0("19",born),born))) %>% 
   mutate(value=make_yeardate(value)) %>% 
   separate(value,into=c("value","death_date","last_location"),sep="ddd") %>% 
   mutate(value=trimws(str_remove(value,leading_punctuation))) %>% 
   mutate(died=str_extract(death_date,"[0-9]{2,4}$")) %>% 
+  mutate(died=as.numeric(ifelse(str_length(died)==2,paste0("19",died),died))) %>% 
   {.}
 
 
@@ -135,7 +138,8 @@ raw_data_5 <- raw_data_4 %>%
   mutate(last_location=ifelse(str_detect(last_location,"Lager"),str_extract(last_location,"Lager [a-zA-Z]+"),last_location)) %>%
   mutate(faith = ifelse(faith == "e$|ev$","Evangelical",faith)) %>% 
   mutate(fate=ifelse(!(faith %in% faiths),faith,fate)) %>%
-  select(-raw_text,everything())
+  mutate(faith=ifelse(faith %in% faiths,faith,"unknown")) %>%
+  select(-raw_text,everything()) %>% 
   {.}
 
 # pull remaining fates out of last_location
@@ -143,8 +147,10 @@ for (n in 1:length(fates)){
   raw_data_5 <- raw_data_5 %>% 
     mutate(fate=ifelse(str_detect(last_location,fates[n]),fates[n],fate)) %>% 
     mutate(last_location=str_remove(last_location,fates[n]))
+  }
+raw_data_5 <- raw_data_5 %>% 
+  mutate(fate=ifelse(fate %in% fates,fate,"unknown"))
   
-}
 
 prepositions <- c("^am ","^bei ","^nach ","^an ","^in ")
 raw_data_5$last_location <- trimws(raw_data_5$last_location)
@@ -153,3 +159,9 @@ for (n in 1:length(prepositions)){
   mutate(last_location=str_remove(last_location,prepositions[n]))
 }
 
+# convert NAs to "unknown" as appropriate
+schowe_residents_1944 <- raw_data_5
+schowe_residents_1944[is.na(schowe_residents_1944)] <- "unknown"
+schowe_residents_1944[schowe_residents_1944 == ""] <- "unknown"
+# maiden names should be NA for men and unmarried women
+schowe_residents_1944$maiden_name[schowe_residents_1944$maiden_name == "unknown"] <- NA
