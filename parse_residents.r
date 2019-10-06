@@ -44,21 +44,27 @@ raw_data <- read_lines("data/Schowe_Residents.txt",skip_empty_rows = TRUE) %>%
   mutate(raw_text = value)
 
 #expand abbreviations
-# questions: is "gef." "geßtorben" or "gefallen" (which would be "killed in action")? I translate to "died."
 raw_data_1 <- raw_data %>% 
   mutate(value = str_replace_all(value,"P {0,1}\\.","Platz")) %>% 
   mutate(value = str_replace_all(value,"Hof J {0,1}\\.","Hof J")) %>% 
-  mutate(value = str_replace_all(value,"geb {0,1}\\.","nee")) %>% 
-  mutate(value = str_replace_all(value,"ev {0,1}(\\.|,)","Evangelical")) %>% 
+  #marital status
+  # divorced and married-to are also found a few times but I don't modify these.
+  mutate(value = str_replace_all(value,"geb {0,1}\\.","nee")) %>%
+  # faiths
   # "ret." also appears in the religion field but I am not confident enough to assume it is a typo for "ref"
+  mutate(value = str_replace_all(value,"ev {0,1}(\\.|,)","Evangelical")) %>% 
   mutate(value = str_replace_all(value,"ref {0,1}\\.","Reformed")) %>%
-  mutate(value = str_replace_all(value,"gef {0,1}\\.","died")) %>%
+  # places
   mutate(value = str_replace_all(value,"Krs {0,1}\\.","Krs")) %>%
   mutate(value = str_replace_all(value,"Jug {0,1}\\.","Jugoslavia")) %>%
   mutate(value = str_replace_all(value,"†","died")) %>% 
   mutate(value = str_replace_all(value,", {0,2}sen\\."," Senior")) %>% 
+  # fates
+  # questions: is "gef." "geßtorben" or "gefallen" (which would be "killed in action")? I translate to "died."
+  mutate(value = str_replace_all(value,"gef {0,1}\\.","died")) %>%
   mutate(value = str_replace_all(value,"vermißt","missing")) %>% 
   mutate(value = str_replace_all(value,"ermordet","murdered")) %>% 
+  mutate(value = str_replace_all(value,"erhängte","hanged")) %>%  
   mutate(value = str_replace_all(value,", {0,2}jun\\."," Junior")) %>% 
   mutate(value = str_replace_all(value,"r\\. {0,2}k\\.","Catholic")) %>% 
   {.}  
@@ -72,7 +78,7 @@ schowe_street_names <- c("Kuzuraer-Gasse", "Wolf-Gasse (Schiller-Gasse)", "Allee
                   "Hof J Wert", "Schlagbrücke")
 
 faiths <- c("Evangelical","Reformed","Catholic")
-fates <- c("died","murdered","missing")
+fates <- c("died","murdered","missing","hanged")
 
 # extract anything that looks like an address and move it to the address column
 # move_address <- function(orig_str)
@@ -146,3 +152,4 @@ for (n in 1:length(prepositions)){
   raw_data_5 <- raw_data_5 %>% 
   mutate(last_location=str_remove(last_location,prepositions[n]))
 }
+
