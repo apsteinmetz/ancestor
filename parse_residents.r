@@ -194,3 +194,5 @@ schowe_residents_1944$maiden_name[schowe_residents_1944$maiden_name == "unknown"
 schowe_residents_1944 <- schowe_residents_1944 %>% 
   select(last_name,first_name,maiden_name,faith,street,house,village,born,
          died,fate,last_location,last_district,birth_date,death_date,raw_text)
+save(schowe_residents_1944,file="data/schowe_residents_1944.rdata")
+write_csv(schowe_residents_1944,"data/schowe_residents_1944.csv")
