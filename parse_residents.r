@@ -67,6 +67,7 @@ raw_data_1 <- raw_data %>%
   mutate(value = str_replace_all(value,"vermißt","missing")) %>% 
   mutate(value = str_replace_all(value,"ermordet","murdered")) %>% 
   mutate(value = str_replace_all(value,"ermordert","murdered")) %>% 
+  mutate(value = str_replace_all(value,"der Gefangenschaft","captivity")) %>% 
   mutate(value = str_replace_all(value,"erhängte","hanged")) %>%  
   mutate(value = str_replace_all(value,", {0,2}jun\\."," Junior")) %>% 
   mutate(value = str_replace_all(value,"r\\. {0,2}k\\.","Catholic")) %>% 
@@ -94,7 +95,7 @@ schowe_street_names <- c("Kuzuraer-Gasse",
                          "Schlagbrücke")
 
 faiths <- c("Evangelical","Reformed","Catholic")
-fates <- c("died","murdered","missing","hanged")
+fates <- c("died","murdered","missing","hanged","captivity")
 
 # extract anything that looks like an address and move it to the address column
 # move_address <- function(orig_str)
@@ -131,7 +132,7 @@ raw_data_2 <- raw_data_2 %>%
 
 # extract fates
 # default if a bad end is not specified
-raw_data_2$fate <- "emigrated"
+raw_data_2$fate <- "expelled"
 for (n in 1:length(fates)){
   raw_data_2 <- raw_data_2 %>% 
     mutate(fate=ifelse(str_detect(value,fates[n]),fates[n],fate)) %>% 
@@ -195,7 +196,10 @@ raw_data_5 <- raw_data_5 %>%
   mutate(last_district=ifelse(is.na(last_district),last_location_2,last_district)) %>% 
   mutate(last_location=ifelse(str_detect(last_location,"[0-9]"),"unknown",last_location)) %>% 
   mutate(faith=ifelse(str_detect(last_location,"^.v"),"Evangelical",faith)) %>% 
-  mutate(last_location=ifelse(str_detect(last_location,"^.v"),last_district,last_location)) %>% 
+  mutate(last_location=ifelse(str_detect(last_location,"^.v"),last_district,last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Jugo"),"Jugoslawien",last_location)) %>%
+  mutate(fate=ifelse(!is.na(died) & fate == "expelled","died",fate)) %>%
+  
   {.}
 
 raw_data_5 <- raw_data_5 %>% select(-last_location_2,everything())
