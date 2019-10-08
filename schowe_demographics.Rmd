@@ -1,0 +1,50 @@
+---
+title: "Schowe Residents in 1944"
+output: html_notebook
+---
+Data from the 1961 Heimatbuch
+
+```{r}
+library(tidyverse)
+load("data/schowe_residents_1944.rdata")
+```
+What was the population of Schowe by street?
+```{r}
+schowe_residents_1944 %>% group_by(village,street) %>% 
+  summarize(population=n()) %>% arrange(desc(population))
+```
+
+What was the fate of the residents?  If there is no death date but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps.
+```{r}
+fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
+  summarize(count=n()) %>% 
+  arrange(desc(count))
+fates_tab
+
+```
+```{r}
+# pie(fates_tab$count,labels=fates_tab$fate)
+schowe_residents_1944 %>% 
+  ggplot(aes(x=factor(1),fill=fate)) + 
+  geom_bar(width=1) + 
+  coord_polar(theta = "y") + 
+  theme_void() +
+  labs(title = "Fate of the Schower after WWII",
+       caption = "Source: Heimatbuch der Gemeinde Schowe - 1961")
+```
+
+Among the residents whose death year we know, in what years were the deaths concentrated?
+```{r}
+schowe_residents_1944 %>% group_by(fate) %>% 
+  filter(died != "unknown") %>% 
+  summarize(count=n(),avg_died=as.integer(mean(as.numeric(died)))) %>% 
+  arrange(desc(count))
+```
+
+
+```{r}
+locations <- schowe_residents_1944 %>% group_by(last_location) %>% 
+  summarize(count=n())
+  
+```
+
