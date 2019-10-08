@@ -73,12 +73,25 @@ raw_data_1 <- raw_data %>%
   {.}  
 
 #conforms to abbreviation mods above
-schowe_street_names <- c("Kuzuraer-Gasse", "Wolf-Gasse (Schiller-Gasse)", "Allee-Gasse", 
-                  "Debrezin-Gasse", "Lange-Gasse", "Frosch-Gasse", "Jakobsdörfchen (Belgrader-Gasse )", 
-                  "Spital", "Rappen-Gasse (Pfälzer-Gasse )", "Haupt-Gasse", "Seil-Gasse", 
-                  "Elisabeth-Gasse", "Schiller-Gasse", "Fohlen-Gasse (Zagreber-Gasse)", 
-                  "Seil-Gasse – Kleine-Gasse", "Hof Geyer", "Hof Platz Brücker", 
-                  "Hof J Wert", "Schlagbrücke")
+schowe_street_names <- c("Kuzuraer-Gasse", 
+                         "Wolf-Gasse (Schiller-Gasse)", 
+                         "Allee-Gasse", 
+                         "Debrezin-Gasse", 
+                         "Lange-Gasse", 
+                         "Frosch-Gasse", 
+                         "Jakobsdörfchen (Belgrader-Gasse )", 
+                         "Spital", 
+                         "Rappen-Gasse (Pfälzer-Gasse )", 
+                         "Haupt-Gasse", 
+                         "Seil-Gasse", 
+                         "Elisabeth-Gasse", 
+                         "Schiller-Gasse", 
+                         "Fohlen-Gasse (Zagreber-Gasse)", 
+                         "Seil-Gasse – Kleine-Gasse", 
+                         "Hof Geyer", 
+                         "Hof Platz Brücker", 
+                         "Hof J Wert", 
+                         "Schlagbrücke")
 
 faiths <- c("Evangelical","Reformed","Catholic")
 fates <- c("died","murdered","missing","hanged")
@@ -100,17 +113,29 @@ raw_data_2 <- raw_data_1 %>%
   filter(!is.na(address)) %>% 
   separate(address,into=c("village","street"),sep=" -- ") %>% 
   mutate(house=str_extract(street,house_number_str)) %>% 
-  mutate(street=trimws(str_remove(street,house_number_str))) %>%
+  {.}
+
+# extract street names from list of street names
+for (n in 1:length(schowe_street_names)){
+  raw_data_2 <- raw_data_2 %>% 
+    mutate(street=ifelse(str_detect(raw_text,schowe_street_names[n]),schowe_street_names[n],street)) %>% 
+  {.}
+}
+raw_data_2 <- raw_data_2 %>% 
+  mutate(street = ifelse(street %in% schowe_street_names,street,"unknown")) %>%
+  mutate(village = ifelse(street=="unknown","unknown",village)) %>%
   # if we have a good street name strip address from the base string
   mutate(value = ifelse(street %in% schowe_street_names,str_remove(value,address_str),value)) %>%
   {.}
+  
 
 # extract fates
-raw_data_2$fate <- "unknown"
+# default if a bad end is not specified
+raw_data_2$fate <- "emigrated"
 for (n in 1:length(fates)){
   raw_data_2 <- raw_data_2 %>% 
     mutate(fate=ifelse(str_detect(value,fates[n]),fates[n],fate)) %>% 
-    mutate(value=str_remove(value,fates[n]))
+    mutate(value=str_remove(value,fates[n])) %>% 
     {.}
 }
 # now convert the anything that looks like a date or into birth then death date
@@ -194,5 +219,14 @@ schowe_residents_1944$maiden_name[schowe_residents_1944$maiden_name == "unknown"
 schowe_residents_1944 <- schowe_residents_1944 %>% 
   select(last_name,first_name,maiden_name,faith,street,house,village,born,
          died,fate,last_location,last_district,birth_date,death_date,raw_text)
+
+# make factors, as appropriate
+schowe_residents_1944$faith <- as.factor(schowe_residents_1944$faith)
+schowe_residents_1944$fate <- as.factor(schowe_residents_1944$fate)
+schowe_residents_1944$street <- as.factor(schowe_residents_1944$street)
+
+
+
+
 save(schowe_residents_1944,file="data/schowe_residents_1944.rdata")
 write_csv(schowe_residents_1944,"data/schowe_residents_1944.csv")
