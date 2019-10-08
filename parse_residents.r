@@ -95,7 +95,7 @@ schowe_street_names <- c("Kuzuraer-Gasse",
                          "Schlagbrücke")
 
 faiths <- c("Evangelical","Reformed","Catholic")
-fates <- c("died","murdered","missing","hanged","captivity")
+fates <- c("died","murdered","missing","hanged","captivity","killed in action")
 
 # extract anything that looks like an address and move it to the address column
 # move_address <- function(orig_str)
@@ -198,18 +198,23 @@ raw_data_5 <- raw_data_5 %>%
   mutate(faith=ifelse(str_detect(last_location,"^.v"),"Evangelical",faith)) %>% 
   mutate(last_location=ifelse(str_detect(last_location,"^.v"),last_district,last_location)) %>%
   mutate(last_location=ifelse(str_detect(last_location,"Jugo"),"Jugoslawien",last_location)) %>%
-  mutate(fate=ifelse(!is.na(died) & fate == "expelled","died",fate)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Clevel"),"Cleveland",last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Angeles"),"Los Angeles",last_location)) %>%
+  #mutate(fate=ifelse(!is.na(died) & fate == "expelled","died",fate)) %>%
   
   {.}
 
 raw_data_5 <- raw_data_5 %>% select(-last_location_2,everything())
 
 
-prepositions <- c("^am ","^bei ","^nach ","^an ","^in ","und$")
+prepositions <- c("^a. ","^b. ","^am ","^bei ","^nach ","^an ","^in ","und$")
 raw_data_5$last_location <- trimws(raw_data_5$last_location)
 for (n in 1:length(prepositions)){
   raw_data_5 <- raw_data_5 %>% 
-  mutate(last_location=str_remove(last_location,prepositions[n]))
+    mutate(last_location=trimws(str_remove(last_location,prepositions[n])))
+  # do it twice
+  raw_data_5 <- raw_data_5 %>% 
+    mutate(last_location=trimws(str_remove(last_location,prepositions[n])))
 }
 
 
