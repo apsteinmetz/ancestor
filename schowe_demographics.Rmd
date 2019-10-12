@@ -5,9 +5,17 @@ output: html_notebook
 Data from the 1961 Heimatbuch
 
 ```{r}
+# devtools::install_github("https://github.com/rstudio/fontawesome.git")
+#devtools::install_github("hrbrmstr/waffle")
 library(tidyverse)
+library(ggthemes)
+library(waffle)
+#library(fontawesome)
+library(extrafont) # for waffle glyphs
+loadfonts(device="win",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
 ```
+
 What was the population of Schowe by street?
 ```{r}
 schowe_residents_1944 %>% group_by(village,street) %>% 
@@ -22,18 +30,36 @@ fates_tab <- schowe_residents_1944 %>% group_by(fate) %>%
 fates_tab
 
 ```
-```{r}
-# pie(fates_tab$count,labels=fates_tab$fate)
-schowe_residents_1944 %>% 
-  ggplot(aes(x=factor(1),fill=fate)) + 
-  geom_bar(width=1) + 
-  coord_polar(theta = "y") + 
-  theme_void() +
+
+```{r message=FALSE, warning=FALSE}
+
+fates_tab_summary <- fates_tab %>%
+  mutate(fate = as.character(fate)) %>% 
+  mutate(fate = ifelse(count < 10,"violent death",fate)) %>% 
+  group_by(fate) %>% 
+  summarise(count_div_10 = sum(count)/10) %>%
+  arrange(desc(count_div_10))
+
+fates_waffle_vector <- fates_tab_summary$count_div_10
+
+names(fates_waffle_vector) <- paste(fates_tab_summary$fate,fates_tab_summary$count_div_10*10)
+
+waffle::waffle(fates_waffle_vector,
+               use_glyph = "male",
+               glyph_font = "FontAwesome",
+               glyph_size = 5,
+               glyph_font_family = "FontAwesome",
+               flip = FALSE) + 
   labs(title = "Fate of the Schower after WWII",
-       caption = "Source: Heimatbuch der Gemeinde Schowe - 1961")
+       caption = "Source: Heimatbuch der Gemeinde Schowe - 1961",
+       x="1 body = 10 lives") + 
+  scale_fill_manual(values=c("orange","black","darkgrey","blue","purple","red","white"),
+                    aesthetics = "colour", name = NULL) +
+  NULL
+
 ```
 
-Among the residents whose death year we know, in what years were the deaths concentrated?
+Among the residents whose death year is specified, in what years were the deaths concentrated?
 ```{r}
 schowe_residents_1944 %>% group_by(fate) %>% 
   filter(died != "unknown") %>% 
@@ -41,10 +67,66 @@ schowe_residents_1944 %>% group_by(fate) %>%
   arrange(desc(count))
 ```
 
-
+Among those who survived expulsion, most wound up scattered thoughout Germany but the most popular single destination, by a wide margin, was Cleveland, Ohio, USA.  Cleveland is home to a large Danube Swabian community that was established before and after WWI.
 ```{r}
 locations <- schowe_residents_1944 %>% group_by(last_location) %>% 
-  summarize(count=n())
-  
+  filter(fate == "expelled") %>% 
+  summarize(count=n()) %>% 
+  arrange(desc(count))
+locations
+```
+
+```{r}
+camps <- schowe_residents_1944 %>% group_by(last_location) %>% 
+  filter(str_detect(last_location,"Lager|Rußland")) %>% 
+  summarize(count=n()) %>% 
+  arrange(desc(count)) %>% 
+  mutate(last_location = ifelse(count<10,"Other Lagers",last_location)) %>% 
+  group_by(last_location) %>% 
+  summarize(deaths=sum(count))
+camps
+```
+```{r message=FALSE, warning=FALSE}
+camps_waffle_vector <- camps$deaths/10
+names(camps_waffle_vector) <- paste(camps$last_location,camps$deaths)
+
+waffle::waffle(camps_waffle_vector,               
+               use_glyph = "male",
+               glyph_font = "FontAwesome",
+               glyph_size = 7,
+               glyph_font_family = "FontAwesome",
+               flip = FALSE,
+               rows = 4) + 
+  labs(title = "Schower Deaths in the Camps after WWII",
+       caption = "Source: Heimatbuch der Gemeinde Schowe - 1961",
+       x="1 body = 10 lives") + 
+  scale_fill_manual(values=c("black","blue","purple","red","white"),
+                    aesthetics = "colour", name = NULL)
+```
+```{r}
+schowe_residents_1944 %>% 
+  filter(born != "unknown") %>% 
+  mutate(age_in_1944=1944-as.numeric(born)) %>% 
+  filter(fate == "expelled" | fate == "died in camp") %>% 
+#  pull(born) %>% 
+#  hist()
+  group_by(age_in_1944,fate) %>% 
+  ggplot(aes(age_in_1944)) + 
+  geom_histogram(binwidth = 10,color="black") + 
+  facet_wrap(~fate) + 
+  labs(title = "Age in 1944, Residents of Schowe Who ..")
+```
+
+4 of the 33 were women, aged 20,20,20 and 26.
+```{r}
+schowe_residents_1944 %>% 
+  filter(born != "unknown") %>% 
+  mutate(age_in_1944=1944-as.numeric(born)) %>% 
+  filter(last_location == "Rußland" & fate == "died in camp") %>% 
+  group_by(age_in_1944) %>% 
+  ggplot(aes(age_in_1944)) + 
+  geom_histogram(binwidth = 10,color="black") + 
+  labs(title = "Age in 1944, Residents of Schowe Who Were Sent to Russia and Died")
+
 ```
 
