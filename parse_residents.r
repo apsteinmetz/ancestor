@@ -67,7 +67,7 @@ raw_data_1 <- raw_data %>%
   mutate(value = str_replace_all(value,"vermißt","missing")) %>% 
   mutate(value = str_replace_all(value,"ermordet","murdered")) %>% 
   mutate(value = str_replace_all(value,"ermordert","murdered")) %>% 
-  mutate(value = str_replace_all(value,"der Gefangenschaft","captivity")) %>% 
+  mutate(value = str_replace_all(value,"der Gefangenschaft","died")) %>% 
   mutate(value = str_replace_all(value,"erhängte","hanged")) %>%  
   mutate(value = str_replace_all(value,", {0,2}jun\\."," Junior")) %>% 
   mutate(value = str_replace_all(value,"r\\. {0,2}k\\.","Catholic")) %>% 
@@ -146,6 +146,8 @@ raw_data_3 <- raw_data_2 %>%
   separate(value,into=c("name","birth_date","value"),sep="ddd") %>% 
   mutate(born=str_extract(birth_date,"[0-9]{2,4}$")) %>% 
   mutate(born=as.numeric(ifelse(str_length(born)==2,paste0("19",born),born))) %>% 
+  mutate(born=ifelse(born<1800,NA,born)) %>% 
+  mutate(born=ifelse(born>1944,NA,born)) %>% 
   mutate(value=make_yeardate(value)) %>% 
   separate(value,into=c("value","death_date","last_location"),sep="ddd") %>% 
   mutate(value=trimws(str_remove(value,leading_punctuation))) %>% 
@@ -193,13 +195,18 @@ for (n in 1:length(fates)){
 }
 raw_data_5 <- raw_data_5 %>% 
   separate(last_location,into=c("last_location","last_location_2"),sep=",") %>%
-  mutate(last_district=ifelse(is.na(last_district),last_location_2,last_district)) %>% 
+  mutate(last_district=ifelse(is.na(last_district),last_location_2,last_district))
+
+raw_data_5 <- raw_data_5 %>% 
   mutate(last_location=ifelse(str_detect(last_location,"[0-9]"),"unknown",last_location)) %>% 
   mutate(faith=ifelse(str_detect(last_location,"^.v"),"Evangelical",faith)) %>% 
   mutate(last_location=ifelse(str_detect(last_location,"^.v"),last_district,last_location)) %>%
   mutate(last_location=ifelse(str_detect(last_location,"Jugo"),"Jugoslawien",last_location)) %>%
-  mutate(last_location=ifelse(str_detect(last_location,"Clevel"),"Cleveland",last_location)) %>%
-  mutate(last_location=ifelse(str_detect(last_location,"Angeles"),"Los Angeles",last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Clevel"),"Cleveland, USA",last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Angeles"),"Los Angeles, USA",last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"Washington"),"Washington, USA",last_location)) %>%
+  mutate(last_location=ifelse(str_detect(last_location,"New York"),"New York, USA",last_location)) %>%
+  mutate(last_location=str_remove_all(last_location,"Krs ")) %>%
   #mutate(fate=ifelse(!is.na(died) & fate == "expelled","died",fate)) %>%
   
   {.}
@@ -218,6 +225,7 @@ for (n in 1:length(prepositions)){
 }
 
 
+
 # ------------- Make Final------------------
 # convert NAs to "unknown" as appropriate
 schowe_residents_1944 <- raw_data_5
@@ -229,10 +237,16 @@ schowe_residents_1944 <- schowe_residents_1944 %>%
   select(last_name,first_name,maiden_name,faith,street,house,village,born,
          died,fate,last_location,last_district,birth_date,death_date,raw_text)
 
+#make died in camp or Russia a separate fate
+schowe_residents_1944 <- schowe_residents_1944 %>% 
+  mutate(fate = ifelse(str_detect(last_location,"Lager|Rußland") & fate=="died","died in camp",fate))
+
 # make factors, as appropriate
 schowe_residents_1944$faith <- as.factor(schowe_residents_1944$faith)
 schowe_residents_1944$fate <- as.factor(schowe_residents_1944$fate)
 schowe_residents_1944$street <- as.factor(schowe_residents_1944$street)
+
+
 
 
 
