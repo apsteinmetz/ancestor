@@ -187,7 +187,19 @@ name_freq <- schowe_residents_1944 %>%
   count(pair_name) %>% 
   arrange(desc(n))
 
+set.seed(12345)
+wordcloud(name_freq$pair_name,name_freq$n,
+          scale=c(3,.4), rot.per = 0,
+          max.words = 20,colors = "purple")
 
-name_freq
+
+# knitr::kable(name_freq[1:20,])
+```
+
+Number of people per household
+```{r}
+schowe_residents_1944 %>% mutate(address = paste(house,street)) %>% 
+  count(address) %>% 
+  arrange(desc(n))
 ```
 
