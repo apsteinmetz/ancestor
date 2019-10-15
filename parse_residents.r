@@ -95,7 +95,8 @@ schowe_street_names <- c("Kuzuraer-Gasse",
                          "Schlagbrücke")
 
 faiths <- c("Evangelical","Reformed","Catholic")
-fates <- c("died","murdered","missing","hanged","captivity","killed in action")
+fates <- c("died","murdered","missing","hanged","captivity","killed in action",
+           "died in Lager Jarek","died in Russia","died in another camp")
 
 # extract anything that looks like an address and move it to the address column
 # move_address <- function(orig_str)
@@ -103,6 +104,7 @@ trailing_punctuation <- "[^[:alnum:]]+$"
 leading_punctuation <- "^[^[:alnum:]]+"
 address_str <- "(\\.|\\?|;|,|:|·){1,2}[öäüß[:alnum:] \\/–\\-\\(\\)]+$"
 house_number_str <- "[0-9\\/)]+[a-z]{0,1}$"
+expanded_char <- "[A-ž]+" #regex that includes umlauts and sharp s
 
 #extract addresses
 raw_data_2 <- raw_data_1 %>% 
@@ -167,6 +169,9 @@ raw_data_4 <- raw_data_3 %>%
           extra = "merge") %>%
   mutate(first_name=str_remove(first_name,", $")) %>% 
   separate(last_name, into=c("last_name","maiden_name"), sep = " nee ") %>% 
+  mutate(first_name = str_extract(first_name,expanded_char)) %>% 
+  mutate(maiden_name = str_extract(maiden_name,expanded_char)) %>% 
+  mutate(last_name = str_extract(last_name,expanded_char)) %>% 
   {.}
 # --------- MAKE 5 ---------------
 raw_data_5 <- raw_data_4 %>%
@@ -239,8 +244,10 @@ schowe_residents_1944 <- schowe_residents_1944 %>%
 
 #make died in camp or Russia a separate fate
 schowe_residents_1944 <- schowe_residents_1944 %>% 
-  mutate(fate = ifelse(str_detect(last_location,"Lager|Rußland") & fate=="died","died in camp",fate))
-
+  mutate(fate = ifelse(str_detect(last_location,"Lager") & fate=="died","died in another camp",fate)) %>% 
+  mutate(fate = ifelse(str_detect(last_location,"Jarek") & str_detect(fate,"died"),"died in Lager Jarek",fate)) %>% 
+  mutate(fate = ifelse(str_detect(last_location,"Rußland") & fate=="died","died in Russia",fate))
+  
 # make factors, as appropriate
 schowe_residents_1944$faith <- as.factor(schowe_residents_1944$faith)
 schowe_residents_1944$fate <- as.factor(schowe_residents_1944$fate)
