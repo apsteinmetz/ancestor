@@ -10,8 +10,8 @@ Data from the 1961 Heimatbuch
 library(tidyverse)
 library(ggthemes)
 library(waffle)
-#library(fontawesome)
 library(extrafont) # for waffle glyphs
+library(wordcloud)
 loadfonts(device="win",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
 ```
@@ -22,7 +22,7 @@ schowe_residents_1944 %>% group_by(village,street) %>%
   summarize(population=n()) %>% arrange(desc(population))
 ```
 
-What was the fate of the residents?  If there is no death date but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps.
+What was the fate of the residents?  If there is no death date but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
 ```{r}
 fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
   summarize(count=n()) %>% 
@@ -42,18 +42,18 @@ fates_tab_summary <- fates_tab %>%
 
 fates_waffle_vector <- fates_tab_summary$count_div_10
 
-names(fates_waffle_vector) <- paste(fates_tab_summary$fate,fates_tab_summary$count_div_10*10)
+names(fates_waffle_vector) <- paste(fates_tab_summary$count_div_10*10,fates_tab_summary$fate)
 
 waffle::waffle(fates_waffle_vector,
                use_glyph = "male",
                glyph_font = "FontAwesome",
-               glyph_size = 5,
+               glyph_size = 4.5,
                glyph_font_family = "FontAwesome",
                flip = FALSE) + 
   labs(title = "Fate of the Schower after WWII",
        caption = "Source: Heimatbuch der Gemeinde Schowe - 1961",
        x="1 body = 10 lives") + 
-  scale_fill_manual(values=c("orange","black","darkgrey","blue","purple","red","white"),
+  scale_fill_manual(values=c("orange","black","darkgrey","slategrey","darkred","blue","purple","red","white"),
                     aesthetics = "colour", name = NULL) +
   NULL
 
@@ -63,11 +63,10 @@ Among the residents whose death year is specified, in what years were the deaths
 ```{r}
 schowe_residents_1944 %>% group_by(fate) %>% 
   filter(died != "unknown") %>% 
-  summarize(count=n(),avg_died=as.integer(mean(as.numeric(died)))) %>% 
-  arrange(desc(count))
+  summarize(avg_died=as.integer(mean(as.numeric(died))))
 ```
 
-Among those who survived expulsion, most wound up scattered thoughout Germany but the most popular single destination, by a wide margin, was Cleveland, Ohio, USA.  Cleveland is home to a large Danube Swabian community that was established before and after WWI.
+Among those who survived expulsion, most wound up scattered thoughout Germany but the most popular single destination, by a wide margin, was Cleveland, Ohio, USA.  Cleveland is home to a large Danube Swabian community that was established before and after WWI.  Many of my family came to Cleveland during this time.
 ```{r}
 locations <- schowe_residents_1944 %>% group_by(last_location) %>% 
   filter(fate == "expelled") %>% 
@@ -76,9 +75,10 @@ locations <- schowe_residents_1944 %>% group_by(last_location) %>%
 locations
 ```
 
+A large fraction of the village population was sent to concentration camps in Yugoslavia or labor camps in Russia and died there.  An unknown fraction of those counted as "expelled" went through the camps and survived. 
 ```{r}
 camps <- schowe_residents_1944 %>% group_by(last_location) %>% 
-  filter(str_detect(last_location,"Lager|Rußland")) %>% 
+  filter(str_detect(last_location,"Lager|Rußland") & fate != "expelled") %>% 
   summarize(count=n()) %>% 
   arrange(desc(count)) %>% 
   mutate(last_location = ifelse(count<10,"Other Lagers",last_location)) %>% 
@@ -100,33 +100,94 @@ waffle::waffle(camps_waffle_vector,
   labs(title = "Schower Deaths in the Camps after WWII",
        caption = "Source: Heimatbuch der Gemeinde Schowe - 1961",
        x="1 body = 10 lives") + 
-  scale_fill_manual(values=c("black","blue","purple","red","white"),
+  scale_fill_manual(values=c("black","slategrey","darkred","red","white"),
                     aesthetics = "colour", name = NULL)
 ```
-```{r}
-schowe_residents_1944 %>% 
-  filter(born != "unknown") %>% 
-  mutate(age_in_1944=1944-as.numeric(born)) %>% 
-  filter(fate == "expelled" | fate == "died in camp") %>% 
-#  pull(born) %>% 
-#  hist()
-  group_by(age_in_1944,fate) %>% 
-  ggplot(aes(age_in_1944)) + 
-  geom_histogram(binwidth = 10,color="black") + 
-  facet_wrap(~fate) + 
-  labs(title = "Age in 1944, Residents of Schowe Who ..")
-```
 
-4 of the 33 were women, aged 20,20,20 and 26.
+
+33 villagers were sent to Russia and died there.  4 of the 33 were women, aged 20,20,20 and 26. Among them was my grandmother's niece.
 ```{r}
 schowe_residents_1944 %>% 
   filter(born != "unknown") %>% 
   mutate(age_in_1944=1944-as.numeric(born)) %>% 
-  filter(last_location == "Rußland" & fate == "died in camp") %>% 
+  filter(fate == "died in Russia") %>% 
   group_by(age_in_1944) %>% 
   ggplot(aes(age_in_1944)) + 
   geom_histogram(binwidth = 10,color="black") + 
   labs(title = "Age in 1944, Residents of Schowe Who Were Sent to Russia and Died")
 
+```
+```{r}
+schowe_residents_1944 %>% 
+  filter(born != "unknown") %>% 
+  mutate(age_in_1944=1944-as.numeric(born)) %>% 
+  filter(str_detect(last_location,"Lager|Rußland") & str_detect(fate,"died")) %>% 
+#  mutate(last_location = ifelse(str_detect(last_location,"Rußland|Jarek"),last_location,"Other Lagers")) %>% 
+  group_by(age_in_1944) %>% 
+  ggplot(aes(age_in_1944,fill=fate)) + 
+  geom_histogram(binwidth = 10,color = "black") + 
+  scale_fill_manual(values = c("slategrey","darkgrey","orangered"),name=NULL) + 
+  labs(title="Schowe Villagers: Deaths in Camp by Age",
+       subtitle = "The youth were sent to Russia. The old did not survive the camps.")
+```
+
+```{r}
+schowe_residents_1944 %>% 
+  mutate(born =  ifelse(born == "unknown","1844",born)) %>% 
+   mutate(age_in_1944=1944-as.numeric(born)) %>% 
+   filter(str_detect(last_location,"Lager|Rußland") & str_detect(fate,"died")) %>% 
+# #  mutate(last_location = ifelse(str_detect(last_location,"Rußland|Jarek"),last_location,"Other Lagers")) %>% 
+  group_by(age_in_1944) %>%
+  ggplot(aes(age_in_1944,fill=fate)) +
+  geom_histogram(binwidth = 10,color = "black") +
+  scale_fill_manual(values = c("slategrey","darkgrey","orangered"),name=NULL) +
+  labs(title="Schowe Villagers: Deaths in Camp by Age",
+        subtitle = "The youth were sent to Russia. The old did not survive the camps.",
+       caption = 'Age "100" means "unknown"')
+```
+
+Name distribution.
+```{r}
+name_freq <- schowe_residents_1944 %>% 
+  count(last_name) %>% 
+  arrange(desc(n))
+
+#pal <- brewer.pal(9,"BrBG")[-(1:4)]
+set.seed(1234)
+wordcloud(name_freq$last_name,name_freq$n,
+          scale=c(4,.5),
+          max.words = 100,colors = "forestgreen")
+
+
+```
+
+```{r}
+name_freq <- schowe_residents_1944 %>% 
+  count(first_name) %>% 
+  arrange(desc(n))
+
+#pal <- brewer.pal(9,"BrBG")[-(1:4)]
+set.seed(1234)
+wordcloud(name_freq$first_name,name_freq$n,
+          scale=c(3,.5),
+          max.words = 100,colors = "purple")
+
+
+```
+
+Most popular pairings
+```{r}
+name_freq <- schowe_residents_1944 %>%
+  filter(!is.na(maiden_name)) %>% 
+  select(last_name,maiden_name) %>% 
+  apply(1,sort) %>% 
+  t() %>% 
+  as_tibble() %>% 
+  mutate(pair_name = paste0(V1,"-",V2)) %>%
+  count(pair_name) %>% 
+  arrange(desc(n))
+
+
+name_freq
 ```
 
