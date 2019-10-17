@@ -10,9 +10,10 @@ Data from the 1961 Heimatbuch
 library(tidyverse)
 library(ggthemes)
 library(waffle)
-library(extrafont) # for waffle glyphs
 library(wordcloud)
-loadfonts(device="win",quiet = TRUE)
+library(extrafont) # for waffle glyphs
+# extrafont::font_import()
+loadfonts(device="pdf",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
 ```
 
