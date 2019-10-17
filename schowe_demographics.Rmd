@@ -8,6 +8,7 @@ Data from the 1961 Heimatbuch
 # devtools::install_github("https://github.com/rstudio/fontawesome.git")
 #devtools::install_github("hrbrmstr/waffle")
 library(tidyverse)
+library(reshape2)
 library(ggthemes)
 library(waffle)
 library(wordcloud)
@@ -163,15 +164,20 @@ wordcloud(name_freq$last_name,name_freq$n,
 ```
 
 ```{r}
-name_freq <- schowe_residents_1944 %>% 
-  count(first_name) %>% 
-  arrange(desc(n))
+name_freq <- schowe_residents_1944 %>%
+  filter(gender != "unknown") %>% 
+  count(first_name,gender) %>% 
+  acast(first_name ~ gender, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("#F8766D", "#00BFC4"),
+                   max.words = 100,
+                   scale=c(3.0,0.5))
+
 
 #pal <- brewer.pal(9,"BrBG")[-(1:4)]
-set.seed(1234)
-wordcloud(name_freq$first_name,name_freq$n,
-          scale=c(3,.5),
-          max.words = 100,colors = "purple")
+#set.seed(1234)
+#wordcloud(name_freq$first_name,name_freq$n,
+#          scale=c(3,.5),
+#          max.words = 100,colors = "purple")
 
 
 ```
