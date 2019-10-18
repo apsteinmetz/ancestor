@@ -167,20 +167,23 @@ wordcloud(name_freq$last_name,name_freq$n,
 name_freq <- schowe_residents_1944 %>%
   filter(gender != "unknown") %>% 
   count(first_name,gender) %>% 
-  acast(first_name ~ gender, value.var = "n", fill = 0) %>%
+  acast(first_name ~ gender, value.var = "n", fill = 0)
+
+
+name_freq %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100,
                    scale=c(3.0,0.5))
-
-
-#pal <- brewer.pal(9,"BrBG")[-(1:4)]
-#set.seed(1234)
-#wordcloud(name_freq$first_name,name_freq$n,
-#          scale=c(3,.5),
-#          max.words = 100,colors = "purple")
-
-
 ```
+
+Population count by age and gender.
+```{r}
+schowe_residents_1944 %>%
+#  filter(gender != "unknown") %>% 
+  group_by(gender) %>%
+  summarize(count = n(),age = round(1944-mean(as.numeric(born),na.rm = TRUE),1))
+```
+
 
 Most popular pairings
 ```{r}
@@ -205,7 +208,9 @@ wordcloud(name_freq$pair_name,name_freq$n,
 
 Number of people per household
 ```{r}
-schowe_residents_1944 %>% mutate(address = paste(house,street)) %>% 
+residents_per_house <- schowe_residents_1944 %>% 
+  filter(street != "unknown") %>% 
+  mutate(address = paste(village,house,street)) %>% 
   count(address) %>% 
   arrange(desc(n))
 ```

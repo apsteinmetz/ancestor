@@ -30,12 +30,11 @@ genders <- schowe_residents_1944 %>%
   {.}
 
 genders_schowe <- genders %>% 
-  mutate(gender = ifelse(gender=="f","Female",gender)) %>% 
-  mutate(gender = ifelse(gender=="m","Male",gender)) %>% 
-  mutate(gender = ifelse(!str_detect(gender,"ale"),"unknown",gender)) %>% 
-  mutate(gender = ifelse(is.na(gender),"unknown",gender)) %>% 
-  mutate(gender = as.factor(gender)) %>% 
-  {.}
+ mutate(gender = ifelse(gender=="f","Female",gender)) %>%
+ mutate(gender = ifelse(gender=="m","Male",gender)) %>%
+ mutate(gender = ifelse(!str_detect(gender,"ale"),"unknown",gender)) %>%
+ mutate(gender = ifelse(is.na(gender),"unknown",gender)) %>%
+ mutate(gender = as.factor(gender)) %>%
+ distinct(first_name,.keep_all = TRUE)
 
 save(genders_schowe,file="data/genders_schowe.rdata")
-
