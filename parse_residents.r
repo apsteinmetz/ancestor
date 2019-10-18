@@ -74,25 +74,32 @@ raw_data_1 <- raw_data %>%
   {.}  
 
 #conforms to abbreviation mods above
-schowe_street_names <- c("Kuzuraer-Gasse", 
-                         "Wolf-Gasse (Schiller-Gasse)", 
-                         "Allee-Gasse", 
-                         "Debrezin-Gasse", 
-                         "Lange-Gasse", 
-                         "Frosch-Gasse", 
-                         "Jakobsdörfchen (Belgrader-Gasse )", 
-                         "Spital", 
-                         "Rappen-Gasse (Pfälzer-Gasse )", 
-                         "Haupt-Gasse", 
-                         "Seil-Gasse", 
-                         "Elisabeth-Gasse", 
-                         "Schiller-Gasse", 
-                         "Fohlen-Gasse (Zagreber-Gasse)", 
-                         "Seil-Gasse – Kleine-Gasse", 
-                         "Hof Geyer", 
-                         "Hof Platz Brücker", 
-                         "Hof J Wert", 
-                         "Schlagbrücke")
+
+schowe_street_names <-  c("Allee-Gasse",
+    "Debrezin-Gasse",
+    "Elisabeth-Gasse",
+#    "Fohlen-Gasse (Zagreber-Gasse)",
+    "Fohlen-Gasse",
+    "Frosch-Gasse",
+    "Haupt-Gasse",
+    "Hof Geyer",
+    "Hof J Wert",
+    "Hof Platz Brücker",
+#    "Jakobsdörfchen (Belgrader-Gasse )",
+    "Jakobsdörfchen",
+    "Kuzuraer-Gasse",
+    "Lange-Gasse",
+#    "Rappen-Gasse (Pfälzer-Gasse )",
+    "Rappen-Gasse",
+    "Schiller-Gasse",
+    "Schlagbrücke",
+    "Seil-Gasse",
+#    "Seil-Gasse – Kleine-Gasse",
+    "Spital",
+#    "Wolf-Gasse (Schiller-Gasse)"
+    "Wolf-Gasse"
+)
+
 
 faiths <- c("Evangelical","Reformed","Catholic")
 fates <- c("died","murdered","missing","hanged","captivity","killed in action",
