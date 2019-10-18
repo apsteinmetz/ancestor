@@ -255,7 +255,7 @@ schowe_residents_1944$street <- as.factor(schowe_residents_1944$street)
 
 #assign gender from manually created gender assignment list
 load("data/genders_schowe.rdata")
-schowe_residents_1944 <- left_join(schowe_residents_1944,genders_schowe)
+schowe_residents_1944 <- left_join(schowe_residents_1944,genders_schowe) %>% distinct()
 
 save(schowe_residents_1944,file="data/schowe_residents_1944.rdata")
 write_csv(schowe_residents_1944,"data/schowe_residents_1944.csv")
