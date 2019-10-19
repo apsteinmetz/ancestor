@@ -171,7 +171,7 @@ camps <- schowe_residents_1944 %>% group_by(last_location) %>%
   summarize(deaths=sum(count))
 camps
 ```
-Among the residents whose death year is specified, in what years were the deaths concentrated?
+Among the residents whose death year is specified, in what years were the deaths concentrated?  While the fates of most residents are in the table, only a few have the year of death so this is a small subset of all the deaths.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% group_by(fate) %>% 
   filter(died != "unknown") %>% 
