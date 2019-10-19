@@ -1,11 +1,11 @@
 ---
-title: "Schowe Residents in 1944"
+title: "The Last Residents of Schowe"
 output: html_notebook
 ---
 
 Schowe was one of many Yugoslavian villages settled by ethnic Germans in the late 1700s.  It is where my father's family is from. At the end of WWII, the populace either fled, were put into concentration camps established by the Yugoslavians or sent to Russian labor camps.  Those that survived scattered throughout Germany and the United States. You can read about the "Danube Swabians" [here](https://en.wikipedia.org/wiki/Danube_Swabians).  
 
-While most traces of German presence in what is now Serbia have been scrubbed away, we know much about Schowe from surviving records, particularly the [1944 census](http://dvhh.org/schowe/resources/residentsH.html) and ["1961 Heimatbuch"](http://dvhh.org/schowe/resources/residentsA.html) compiled by the last mayor of Schowe.  Most usage of these records is by individuals looking for their personal family history.  I thought it would be interesting to take a broad view of the data, as well.
+While most traces of German presence in what is now Serbia have been scrubbed away, we know much about Schowe from surviving records, particularly the [1944 census](http://dvhh.org/schowe/resources/residentsH.html) and ["1961 Heimatbuch"](http://dvhh.org/schowe/resources/residentsA.html) compiled by the last mayor of Schowe.  Most usage of these records is by individuals looking for their personal family history.  I thought it would be interesting to take a broad view of the data, as well.  The data as presented is a bit messy and required a lot of cleaning.  It's still not perfect but I was able to get the data into a useful table containing the following items:
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # devtools::install_github("https://github.com/rstudio/fontawesome.git")
@@ -19,8 +19,11 @@ library(extrafont) # for waffle glyphs
 # extrafont::font_import()
 loadfonts(device="pdf",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
+names(schowe_residents_1944)
 ```
+Few rows are have all pieces of data.  
 
+## Population
 What were demographics of the town before the end of the war?
 
 Schowe was a village of about 2,500 souls.
@@ -37,6 +40,7 @@ schowe_residents_1944 %>% group_by(village,street) %>%
   summarize(population=n()) %>% arrange(desc(population))
 ```
 
+## Names
 
 These German villages, small and surrounded by Yugoslavians, were fairly insular.  Marriage among cousins was common so there is not a lot of surname diversity.  There were 250 Hallers in the village. There were 23 Jakob Hallers and 29 Elisabeth Hallers!  Things must have been confusing at the church picnic.
 ```{r echo=FALSE, warning=FALSE}
@@ -87,6 +91,8 @@ wordcloud(name_freq$pair_name,name_freq$n,
 # knitr::kable(name_freq[1:20,])
 ```
 
+## Households
+
 Number of people per household.
 ```{r echo=FALSE, warning=FALSE}
 residents_per_house <- schowe_residents_1944 %>% 
@@ -106,25 +112,24 @@ residents_per_house %>%
 
 ## Religion 
 There were four churches in the town.  Two massive Lutheran churches, Reformed and Evangelical, faced each other in the center of town.  I can only speculate about the competition between the pastors for best sermon each Sunday.
-```{r, out.width = "50%", fig.pos="h"}
+```{r echo=FALSE, fig.pos="h", out.width="50%"}
 knitr::include_graphics("img/Neuschowe_1936_B.jpg")
 ```
 
-In addition there was a Catholic church and a synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.
+In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all the churches are visible from Google Street View.  Interestingly, all are vacant lots today.  
 
 ```{r}
-schowe_residents_1944 %>% count(faith)
+schowe_residents_1944 %>% count(faith) %>% arrange(desc(n))
 ```
 
-What was the fate of the residents?  If there is no death date but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
+## Ethnic Cleansing of Schowe 
+
+During a chaotic few weeks in October 1944, the German army retreated westward and many villagers fled.  Some stayed.
+What was their fate?  The Heimatbuch lists the fate of most of the residents.  If there is no death date in the Heimatbuch, but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
 ```{r echo=FALSE, warning=FALSE}
 fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
   summarize(count=n()) %>% 
   arrange(desc(count))
-
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 fates_tab_summary <- fates_tab %>%
   mutate(fate = as.character(fate)) %>% 
@@ -151,7 +156,7 @@ waffle::waffle(fates_waffle_vector,
   NULL
 
 ```
-```{r}
+```{r echo=FALSE}
 fates_tab
 ```
 
