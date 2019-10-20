@@ -64,6 +64,7 @@ raw_data_1 <- raw_data %>%
   # questions: is "gef." "geßtorben" or "gefallen" (which would be "killed in action")? I translate to "died."
   mutate(value = str_replace_all(value,"gef {0,1}(\\.|,)","died")) %>%
   mutate(value = str_replace_all(value,"gefallen","killed in action")) %>%
+  mutate(value = str_replace_all(value,"gestorben","died")) %>%
   mutate(value = str_replace_all(value,"vermißt","missing")) %>% 
   mutate(value = str_replace_all(value,"ermordet","murdered")) %>% 
   mutate(value = str_replace_all(value,"ermordert","murdered")) %>% 

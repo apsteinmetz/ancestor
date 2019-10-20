@@ -1,6 +1,9 @@
 ---
 title: "The Last Residents of Schowe"
-output: html_notebook
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 Schowe was one of many Yugoslavian villages settled by ethnic Germans in the late 1700s.  It is where my father's family is from. At the end of WWII, the populace either fled, were put into concentration camps established by the Yugoslavians or sent to Russian labor camps.  Those that survived scattered throughout Germany and the United States. You can read about the "Danube Swabians" [here](https://en.wikipedia.org/wiki/Danube_Swabians).  
@@ -19,7 +22,7 @@ library(extrafont) # for waffle glyphs
 # extrafont::font_import()
 loadfonts(device="pdf",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
-names(schowe_residents_1944)
+names(schowe_residents_1944) %>% knitr::kable()
 ```
 Few rows are have all pieces of data.  
 
@@ -115,8 +118,9 @@ There were four churches in the town.  Two massive Lutheran churches, Reformed a
 ```{r echo=FALSE, fig.pos="h", out.width="50%"}
 knitr::include_graphics("img/Neuschowe_1936_B.jpg")
 ```
+Source: [dvhh.org](http://dvhh.org/schowe/history/history.htm)
 
-In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all the churches are visible from Google Street View.  Interestingly, all are vacant lots today.  
+In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all four churches are visible from Google Street View.  Interestingly, all are vacant lots today.
 
 ```{r}
 schowe_residents_1944 %>% count(faith) %>% arrange(desc(n))
@@ -124,8 +128,7 @@ schowe_residents_1944 %>% count(faith) %>% arrange(desc(n))
 
 ## Ethnic Cleansing of Schowe 
 
-During a chaotic few weeks in October 1944, the German army retreated westward and many villagers fled.  Some stayed.
-What was their fate?  The Heimatbuch lists the fate of most of the residents.  If there is no death date in the Heimatbuch, but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
+During a chaotic few weeks in October 1944, the German army retreated westward, the Yugoslavian Partisans and Russians advanced, and many villagers fled.  Some stayed. What was their fate?  The Heimatbuch lists the fate of most of the residents.  If there is no death date in the Heimatbuch, but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
 ```{r echo=FALSE, warning=FALSE}
 fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
   summarize(count=n()) %>% 
@@ -178,7 +181,7 @@ schowe_residents_1944 %>% group_by(fate) %>%
   summarize(avg_died=as.integer(mean(as.numeric(died))))
 ```
 
-```{r message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 camps_waffle_vector <- camps$deaths/10
 names(camps_waffle_vector) <- paste(camps$last_location,camps$deaths)
 
@@ -199,21 +202,12 @@ waffle::waffle(camps_waffle_vector,
 My great aunt chose not to flee with her daughter, presumably to care for her mother.  The choice was fatal for her daughter, Elisabeth and mother, Theresia.  Only my great aunt survived to emigrate to Cleveland in the '50s.
  
 33 villagers were sent to Russia and died there.  4 of the 33 were women, aged 20,20,20 and 26. Among them was Elisabeth.  Theresia died in Lager Jarek at the age of 79.
-```{r echo=FALSE, warning=FALSE}
-schowe_residents_1944 %>% 
-  filter(born != "unknown") %>% 
-  mutate(age_in_1944=1944-as.numeric(born)) %>% 
-  filter(str_detect(last_location,"Lager|Rußland") & str_detect(fate,"died")) %>% 
-#  mutate(last_location = ifelse(str_detect(last_location,"Rußland|Jarek"),last_location,"Other Lagers")) %>% 
-  group_by(age_in_1944) %>% 
-  ggplot(aes(age_in_1944,fill=fate)) + 
-  geom_histogram(binwidth = 10,color = "black") + 
-  scale_fill_manual(values = c("slategrey","darkgrey","orangered"),name=NULL) + 
-  labs(title="Schowe Villagers: Deaths in Camp by Age",
-       caption = "Source: Heimatbuch der Gemeinde Schowe - 1961",
-       subtitle = "The youth were sent to Russia. The old did not survive the camps.")
+
+```{r echo=FALSE, fig.pos="h"}
+knitr::include_graphics("img/lilla_poth_1940_sm.jpg")
 ```
 
+Elisabeth Poth about 1940. Photo by the Johann Pataki studio in Neu Schowe.  Johann Pataki also died in a camp.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% 
   mutate(born =  ifelse(born == "unknown","1844",born)) %>% 
