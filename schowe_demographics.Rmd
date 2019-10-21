@@ -22,7 +22,7 @@ library(extrafont) # for waffle glyphs
 # extrafont::font_import()
 loadfonts(device="pdf",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
-names(schowe_residents_1944) %>% knitr::kable()
+names(schowe_residents_1944) %>% enframe(name = NULL,value="Extracted Facts") %>% knitr::kable()
 ```
 Few rows are have all pieces of data.  
 
@@ -34,33 +34,37 @@ Schowe was a village of about 2,500 souls.
 schowe_residents_1944 %>%
 #  filter(gender != "unknown") %>% 
   group_by(gender) %>%
-  summarize(count = n(),age = round(1944-mean(as.numeric(born),na.rm = TRUE),1))
+  summarize(count = n(),age = round(1944-mean(as.numeric(born),na.rm = TRUE),1)) %>%
+  knitr::kable(format.args = list(big.mark=","))
 ```
 
-What was the population of Schowe by street?
+What was the population of Schowe by street? Here are the top 10 streets.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% group_by(village,street) %>% 
-  summarize(population=n()) %>% arrange(desc(population))
+  summarize(population=n()) %>% arrange(desc(population)) %>% 
+  head(10) %>% 
+  knitr::kable(format.args = list(big.mark=","))
+
 ```
 
 ## Names
 
-These German villages, small and surrounded by Yugoslavians, were fairly insular.  Marriage among cousins was common so there is not a lot of surname diversity.  There were 250 Hallers in the village. There were 23 Jakob Hallers and 29 Elisabeth Hallers!  Things must have been confusing at the church picnic.
-```{r echo=FALSE, warning=FALSE}
+These German villages, small and surrounded by Yugoslavians, were fairly insular.  Marriage among cousins was common so there is not a lot of surname diversity.  There were 250 Hallers in the village. There were 23 Jakob Hallers and 29 Elisabeth Hallers!  Things must have been confusing at the church picnic.  The word clouds below show relative frequency of names as larger type.
+```{r echo=FALSE, warning=FALSE, fig.height= 3}
 name_freq <- schowe_residents_1944 %>% 
   count(last_name) %>% 
   arrange(desc(n))
 
 #pal <- brewer.pal(9,"BrBG")[-(1:4)]
-set.seed(1234)
+set.seed(12)
 wordcloud(name_freq$last_name,name_freq$n,
-          scale=c(4,.5),
+          scale=c(3,.5),
           max.words = 100,colors = "forestgreen")
 
 
 ```
 
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, warning=FALSE, fig.height=3}
 name_freq <- schowe_residents_1944 %>%
   filter(gender != "unknown") %>% 
   count(first_name,gender) %>% 
@@ -70,34 +74,30 @@ name_freq <- schowe_residents_1944 %>%
 name_freq %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100,
+                   title.size = 1,
                    scale=c(3.0,0.5))
 ```
 
-Most popular pairings
-```{r echo=FALSE, warning=FALSE}
+Here are the most common marriage parings.
+```{r echo=FALSE, warning=FALSE,fig.height=2}
 name_freq <- schowe_residents_1944 %>%
   filter(!is.na(maiden_name)) %>% 
   select(last_name,maiden_name) %>% 
   apply(1,sort) %>% 
   t() %>% 
   as_tibble() %>% 
-  mutate(pair_name = paste0(V1,"-",V2)) %>%
-  count(pair_name) %>% 
-  arrange(desc(n))
-
-set.seed(12345)
-wordcloud(name_freq$pair_name,name_freq$n,
-          scale=c(3,.4), rot.per = 0,
-          max.words = 20,colors = "purple")
+  mutate(Marriage = paste0(V1,"-",V2)) %>%
+  count(Marriage,name="Couples") %>% 
+  arrange(desc(Couples))
 
 
-# knitr::kable(name_freq[1:20,])
+knitr::kable(name_freq[1:20,])
 ```
 
 ## Households
 
 Number of people per household.
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, warning=FALSE,fig.align='left'}
 residents_per_house <- schowe_residents_1944 %>% 
   filter(street != "unknown") %>% 
   mutate(address = paste(village,house,street)) %>% 
@@ -115,21 +115,23 @@ residents_per_house %>%
 
 ## Religion 
 There were four churches in the town.  Two massive Lutheran churches, Reformed and Evangelical, faced each other in the center of town.  I can only speculate about the competition between the pastors for best sermon each Sunday.
-```{r echo=FALSE, fig.pos="h", out.width="50%"}
+```{r echo=FALSE,fig.width= 4}
 knitr::include_graphics("img/Neuschowe_1936_B.jpg")
 ```
+
 Source: [dvhh.org](http://dvhh.org/schowe/history/history.htm)
 
 In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all four churches are visible from Google Street View.  Interestingly, all are vacant lots today.
 
-```{r}
-schowe_residents_1944 %>% count(faith) %>% arrange(desc(n))
+```{r echo=FALSE}
+schowe_residents_1944 %>% count(faith,name="count") %>% arrange(desc(count)) %>%
+  knitr::kable(format.args = list(big.mark=","))
 ```
 
 ## Ethnic Cleansing of Schowe 
 
 During a chaotic few weeks in October 1944, the German army retreated westward, the Yugoslavian Partisans and Russians advanced, and many villagers fled.  Some stayed. What was their fate?  The Heimatbuch lists the fate of most of the residents.  If there is no death date in the Heimatbuch, but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
   summarize(count=n()) %>% 
   arrange(desc(count))
@@ -160,7 +162,8 @@ waffle::waffle(fates_waffle_vector,
 
 ```
 ```{r echo=FALSE}
-fates_tab
+fates_tab %>%
+  knitr::kable(format.args = list(big.mark=","))
 ```
 
 A large fraction of the village population was sent to concentration camps in Yugoslavia or labor camps in Russia and died there.  An unknown fraction of those counted as "expelled" went through the camps and survived. 
@@ -172,13 +175,16 @@ camps <- schowe_residents_1944 %>% group_by(last_location) %>%
   mutate(last_location = ifelse(count<10,"Other Lagers",last_location)) %>% 
   group_by(last_location) %>% 
   summarize(deaths=sum(count))
-camps
+camps %>%
+  knitr::kable(format.args = list(big.mark=","))
 ```
+
 Among the residents whose death year is specified, in what years were the deaths concentrated?  While the fates of most residents are in the table, only a few have the year of death so this is a small subset of all the deaths.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% group_by(fate) %>% 
   filter(died != "unknown") %>% 
-  summarize(avg_died=as.integer(mean(as.numeric(died))))
+  summarize(avg_died=as.integer(mean(as.numeric(died)))) %>%
+  knitr::kable()
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -203,11 +209,12 @@ My great aunt chose not to flee with her daughter, presumably to care for her mo
  
 33 villagers were sent to Russia and died there.  4 of the 33 were women, aged 20,20,20 and 26. Among them was Elisabeth.  Theresia died in Lager Jarek at the age of 79.
 
-```{r echo=FALSE, fig.pos="h"}
-knitr::include_graphics("img/lilla_poth_1940_sm.jpg")
+```{r echo=FALSE, fig.pos="h",out.width=2}
+knitr::include_graphics("img/lilla_poth_1940.jpg")
 ```
 
 Elisabeth Poth about 1940. Photo by the Johann Pataki studio in Neu Schowe.  Johann Pataki also died in a camp.
+
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% 
   mutate(born =  ifelse(born == "unknown","1844",born)) %>% 
@@ -223,11 +230,13 @@ schowe_residents_1944 %>%
        caption = 'Note: Age "100" means "unknown"\nSource: Heimatbuch der Gemeinde Schowe - 1961",
 ')
 ```
+
 Among those who survived expulsion, most wound up scattered thoughout Germany but the most popular single destination, by a wide margin, was Cleveland, Ohio, USA.  Cleveland is home to a large Danube Swabian community that was established before and after WWI.  Many of my family came to Cleveland during this time.
 ```{r echo=FALSE, warning=FALSE}
 locations <- schowe_residents_1944 %>% group_by(last_location) %>% 
   filter(fate == "expelled") %>% 
   summarize(count=n()) %>% 
   arrange(desc(count))
-locations
+locations %>%
+  knitr::kable(format.args = list(big.mark=","))
 ```
