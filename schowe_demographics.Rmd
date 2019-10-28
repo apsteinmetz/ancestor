@@ -1,5 +1,5 @@
 ---
-title: "The Last Residents of Schowe"
+title: "The Last Residents of Schowe: Summary Data"
 output: beamer_presentation
 author: Art Steinmetz
 date: October 2019
