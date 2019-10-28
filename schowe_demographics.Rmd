@@ -1,16 +1,16 @@
 ---
 title: "The Last Residents of Schowe"
-output:
-  pdf_document: default
-  html_document:
-    df_print: paged
+output: beamer_presentation
+author: Art Steinmetz
+date: October 2019
 ---
 
-Schowe was one of many Yugoslavian villages settled by ethnic Germans in the late 1700s.  It is where my father's family is from. At the end of WWII, the populace either fled, were put into concentration camps established by the Yugoslavians or sent to Russian labor camps.  Those that survived scattered throughout Germany and the United States. You can read about the "Danube Swabians" [here](https://en.wikipedia.org/wiki/Danube_Swabians).  
+## Introduction
+Schowe was one of many Yugoslavian villages settled by ethnic Germans in the late 1700s.  It is where my father's family is from. At the end of WWII, the populace either fled, were put into concentration camps established by the Yugoslavians or sent to Russian labor camps.  Those that survived scattered throughout Germany and the United States. You can **[read about the "Danube Swabians" here](https://en.wikipedia.org/wiki/Danube_Swabians).**
 
-While most traces of German presence in what is now Serbia have been scrubbed away, we know much about Schowe from surviving records, particularly the [1944 census](http://dvhh.org/schowe/resources/residentsH.html) and ["1961 Heimatbuch"](http://dvhh.org/schowe/resources/residentsA.html) compiled by the last mayor of Schowe.  Most usage of these records is by individuals looking for their personal family history.  I thought it would be interesting to take a broad view of the data, as well.  The data as presented is a bit messy and required a lot of cleaning.  It's still not perfect but I was able to get the data into a useful table containing the following items:
+While most traces of German presence in what is now Serbia have been scrubbed away, we know much about Schowe from surviving records, particularly the **[1944 census](http://dvhh.org/schowe/resources/residentsH.html)** and **["1961 Heimatbuch"](http://dvhh.org/schowe/resources/residentsA.html)** compiled by the last mayor of Schowe.  Most usage of these records is by individuals looking for their personal family history.  I thought it would be interesting to take a broad view of the data, as well.  The data as presented is a bit messy and required a lot of cleaning.  It's still not perfect but I was able to get the data into a useful table containing the following items:
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 # devtools::install_github("https://github.com/rstudio/fontawesome.git")
 #devtools::install_github("hrbrmstr/waffle")
 library(tidyverse)
@@ -18,10 +18,16 @@ library(reshape2)
 library(ggthemes)
 library(waffle)
 library(wordcloud)
+
 library(extrafont) # for waffle glyphs
-# extrafont::font_import()
+#extrafont::font_import()
 loadfonts(device="pdf",quiet = TRUE)
 load("data/schowe_residents_1944.rdata")
+library(knitr)
+knitr::opts_chunk$set(warning = FALSE,  error = FALSE, message = FALSE, echo = FALSE)
+```
+## Information Pulled from Raw Data
+```{r}
 names(schowe_residents_1944) %>% enframe(name = NULL,value="Extracted Facts") %>% knitr::kable()
 ```
 Few rows are have all pieces of data.  
@@ -38,6 +44,7 @@ schowe_residents_1944 %>%
   knitr::kable(format.args = list(big.mark=","))
 ```
 
+## Population by Street
 What was the population of Schowe by street? Here are the top 10 streets.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% group_by(village,street) %>% 
@@ -47,37 +54,43 @@ schowe_residents_1944 %>% group_by(village,street) %>%
 
 ```
 
-## Names
+## Most Common Names
 
 These German villages, small and surrounded by Yugoslavians, were fairly insular.  Marriage among cousins was common so there is not a lot of surname diversity.  There were 250 Hallers in the village. There were 23 Jakob Hallers and 29 Elisabeth Hallers!  Things must have been confusing at the church picnic.  The word clouds below show relative frequency of names as larger type.
-```{r echo=FALSE, warning=FALSE, fig.height= 3}
+
+## First Names
+```{r echo=FALSE, warning=FALSE,fig.height=4}
 name_freq <- schowe_residents_1944 %>% 
   count(last_name) %>% 
   arrange(desc(n))
 
 #pal <- brewer.pal(9,"BrBG")[-(1:4)]
 set.seed(12)
+par(mar = rep(0, 4)) 
 wordcloud(name_freq$last_name,name_freq$n,
-          scale=c(3,.5),
+          scale=c(5,.5),
           max.words = 100,colors = "forestgreen")
 
 
 ```
 
-```{r echo=FALSE, warning=FALSE, fig.height=3}
+## Last Names
+```{r echo=FALSE, warning=FALSE}
 name_freq <- schowe_residents_1944 %>%
   filter(gender != "unknown") %>% 
   count(first_name,gender) %>% 
   acast(first_name ~ gender, value.var = "n", fill = 0)
 
 
+par(mar = rep(0, 4)) 
 name_freq %>%
   comparison.cloud(colors = c("#F8766D", "#00BFC4"),
                    max.words = 100,
                    title.size = 1,
-                   scale=c(3.0,0.5))
+                   scale=c(4.0,0.5))
 ```
 
+## Couples
 Here are the most common marriage parings.
 ```{r echo=FALSE, warning=FALSE,fig.height=2}
 name_freq <- schowe_residents_1944 %>%
@@ -97,7 +110,7 @@ knitr::kable(name_freq[1:20,])
 ## Households
 
 Number of people per household.
-```{r echo=FALSE, warning=FALSE,fig.align='left'}
+```{r echo=FALSE, warning=FALSE,fig.align='left',fig.height=3}
 residents_per_house <- schowe_residents_1944 %>% 
   filter(street != "unknown") %>% 
   mutate(address = paste(village,house,street)) %>% 
@@ -115,13 +128,15 @@ residents_per_house %>%
 
 ## Religion 
 There were four churches in the town.  Two massive Lutheran churches, Reformed and Evangelical, faced each other in the center of town.  I can only speculate about the competition between the pastors for best sermon each Sunday.
-```{r echo=FALSE,fig.width= 4}
-knitr::include_graphics("img/Neuschowe_1936_B.jpg")
+```{r echo=FALSE,fig.width= 2}
+knitr::include_graphics("img/Neuschowe_1936_B.jpg",dpi=250)
 ```
 
 Source: [dvhh.org](http://dvhh.org/schowe/history/history.htm)
 
-In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all four churches are visible from Google Street View.  Interestingly, all are vacant lots today.
+## Different Faiths - Not Really
+
+In addition there was a Catholic church and a Jewish synagogue.  As you might imagine, after five years of Nazi rule, there were no Jews listed in the 1944 census.  The locations of all four churches are visible from Google Street View and, interestingly, all are vacant lots today.
 
 ```{r echo=FALSE}
 schowe_residents_1944 %>% count(faith,name="count") %>% arrange(desc(count)) %>%
@@ -131,7 +146,8 @@ schowe_residents_1944 %>% count(faith,name="count") %>% arrange(desc(count)) %>%
 ## Ethnic Cleansing of Schowe 
 
 During a chaotic few weeks in October 1944, the German army retreated westward, the Yugoslavian Partisans and Russians advanced, and many villagers fled.  Some stayed. What was their fate?  The Heimatbuch lists the fate of most of the residents.  If there is no death date in the Heimatbuch, but there is a last location that is not a camp, I classify them as "expelled."  Note that people may have spent time in the camps and survived (like my great aunt) so are thus counted as expelled.  "Died" is usually in one of the Yugoslavian concentration camps or in Russia so I break that out as a separate category.
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+```{r message=FALSE, warning=FALSE}
 fates_tab <- schowe_residents_1944 %>% group_by(fate) %>% 
   summarize(count=n()) %>% 
   arrange(desc(count))
@@ -146,7 +162,8 @@ fates_tab_summary <- fates_tab %>%
 fates_waffle_vector <- fates_tab_summary$count_div_10
 
 names(fates_waffle_vector) <- paste(fates_tab_summary$count_div_10*10,fates_tab_summary$fate)
-
+```
+```{r eval=FALSE, include=FALSE}
 waffle::waffle(fates_waffle_vector,
                use_glyph = "male",
                glyph_font = "FontAwesome",
@@ -161,10 +178,18 @@ waffle::waffle(fates_waffle_vector,
   NULL
 
 ```
+##
+```{r echo=FALSE,fig.width= 3}
+knitr::include_graphics("img/fate_waffle.png",dpi=300)
+```
+
+## Fates of the Schower
 ```{r echo=FALSE}
 fates_tab %>%
   knitr::kable(format.args = list(big.mark=","))
 ```
+
+## The Camps
 
 A large fraction of the village population was sent to concentration camps in Yugoslavia or labor camps in Russia and died there.  An unknown fraction of those counted as "expelled" went through the camps and survived. 
 ```{r echo=FALSE, warning=FALSE}
@@ -179,6 +204,7 @@ camps %>%
   knitr::kable(format.args = list(big.mark=","))
 ```
 
+## Camp Death Year
 Among the residents whose death year is specified, in what years were the deaths concentrated?  While the fates of most residents are in the table, only a few have the year of death so this is a small subset of all the deaths.
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% group_by(fate) %>% 
@@ -187,7 +213,8 @@ schowe_residents_1944 %>% group_by(fate) %>%
   knitr::kable()
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+## Deaths in the Camps
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 camps_waffle_vector <- camps$deaths/10
 names(camps_waffle_vector) <- paste(camps$last_location,camps$deaths)
 
@@ -205,16 +232,24 @@ waffle::waffle(camps_waffle_vector,
                     aesthetics = "colour", name = NULL)
 ```
 
+```{r echo=FALSE,fig.width= 4}
+knitr::include_graphics("img/camp_waffle.png",dpi=300)
+```
+
+## Russia
+
 My great aunt chose not to flee with her daughter, presumably to care for her mother.  The choice was fatal for her daughter, Elisabeth and mother, Theresia.  Only my great aunt survived to emigrate to Cleveland in the '50s.
  
-33 villagers were sent to Russia and died there.  4 of the 33 were women, aged 20,20,20 and 26. Among them was Elisabeth.  Theresia died in Lager Jarek at the age of 79.
+33 villagers were sent to Russian labor camps and died there.  4 of the 33 were women, aged 20,20,20 and 26. Among them was Elisabeth.  Theresia died in Lager Jarek at the age of 79.
 
-```{r echo=FALSE, fig.pos="h",out.width=2}
-knitr::include_graphics("img/lilla_poth_1940.jpg")
+## One Victim from My Family
+```{r echo=FALSE, fig.pos="h"}
+knitr::include_graphics("img/lilla_poth_1940.jpg",dpi=1000)
 ```
 
 Elisabeth Poth about 1940. Photo by the Johann Pataki studio in Neu Schowe.  Johann Pataki also died in a camp.
 
+## Age of Camp Victims
 ```{r echo=FALSE, warning=FALSE}
 schowe_residents_1944 %>% 
   mutate(born =  ifelse(born == "unknown","1844",born)) %>% 
@@ -231,12 +266,14 @@ schowe_residents_1944 %>%
 ')
 ```
 
+## Where Did the Survivors Go?
+
 Among those who survived expulsion, most wound up scattered thoughout Germany but the most popular single destination, by a wide margin, was Cleveland, Ohio, USA.  Cleveland is home to a large Danube Swabian community that was established before and after WWI.  Many of my family came to Cleveland during this time.
 ```{r echo=FALSE, warning=FALSE}
 locations <- schowe_residents_1944 %>% group_by(last_location) %>% 
   filter(fate == "expelled") %>% 
   summarize(count=n()) %>% 
   arrange(desc(count))
-locations %>%
+locations[1:20,] %>%
   knitr::kable(format.args = list(big.mark=","))
 ```
